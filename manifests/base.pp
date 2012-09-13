@@ -12,4 +12,5 @@ include other
 include apache
 include php
 include mysql
+include java
 include phpmyadmin
