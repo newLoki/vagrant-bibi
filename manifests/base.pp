@@ -1,5 +1,6 @@
 Exec {
-  path => ["/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/bin", "/usr/local/sbin"]
+  path => ["/usr/bin", "/bin", "/usr/sbin", "/sbin", "/usr/local/bin", "/usr/local/sbin"],
+  logoutput => on_failure,
 }
 
 stage { 'first': before => Stage['main'] }
@@ -14,3 +15,4 @@ include php
 include mysql
 include java
 include phpmyadmin
+include application
