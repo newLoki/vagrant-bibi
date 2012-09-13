@@ -8,6 +8,6 @@ Vagrant::Config.run do |config|
     puppet.manifests_path = "manifests"
     puppet.manifest_file  = "base.pp"
     puppet.module_path = "modules"
-    puppet.options = "--verbose"
+    puppet.options = "--summarize"
   end
 end

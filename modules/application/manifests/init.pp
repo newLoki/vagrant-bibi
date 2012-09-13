@@ -1,65 +1,53 @@
 class application {
-    #install composer
-    exec {
-        "composer_install":
-            command => "curl -s https://getcomposer.org/installer | php",
-            creates => "/vagrant/composer.phar",
-            cwd => "/vagrant",
-            require => [Package["curl"]]
-    }
-
-    #move composer to /usr/local/bin/composer
-    exec {
-        "composer_move":
-            command => "sudo mv /vagrant/composer.phar /usr/local/bin/composer",
-            creates => "/usr/local/bin/composer",
-            require => Exec["composer_install"],
-    }
-
-    #install mayflower/bibi into sites
-    exec {
-        "install_bibi":
-            command => "composer create-project mayflower/bibi /vagrant/Sites",
-            creates => "/vagrant/Sites/index.php",
-            require => [Exec["composer_install"], Exec["composer_move"]],
-    }
-
-    exec {
-        "update_bibi":
-            command => "composer update",
-            cwd => "/vagrant/Sites",
-    }
-
     #set permissions
     file {
         "/vagrant/Sites":
             ensure => directory,
             recurse => true,
             purge => false,
-            mode => 600,
             owner => "www-data",
             group => "www-data",
-            require => [Exec["install_bibi"], Exec["update_bibi"]],
+    }
+
+    exec {
+        "create_db":
+            command => 'mysql -uroot -proot -e "CREATE DATABASE IF NOT EXISTS bibi"'
     }
 
     #run liquibase
     exec {
-        "setup_db":
+        "fill_db":
             command => 'java -jar build/liquibase.jar --driver=com.mysql.jdbc.Driver --classpath=build/databasedriver/mysql-connector-java-5.1.17-bin.jar --changeLogFile=data/sql/changelog.xml --url="jdbc:mysql://127.0.0.1:3306/bibi" --username=root --password="root" --contexts="test" migrate',
-            require => Exec["update_bibi"],
-            cwd => "/vagrant/Sites",
+            cwd => "/vagrant/Sites/bibi",
+            require => Exec["create_db"],
     }
+
+
 
     package {
         "php-pear":
             ensure => installed,
     }
 
+    exec {
+        "symfony_channel":
+            command => "sudo pear channel-discover pear.symfony-project.com",
+            unless => 'sudo pear list-channels | grep "pear.symfony-project.com"',
+            require => Package["php-pear"],
+    }
+
+    exec {
+        "phpunit_channel":
+            command => "sudo pear channel-discover pear.phpunit.de",
+            unless => 'sudo pear list-channels | grep "pear.phpunit.de"',
+            require => Package["php-pear"],
+    }
+
     #install phpunit
     exec {
         "install_phpunit":
-            command => "sudo pear channel-discover pear.phpunit.de && sudo pear install phpunit/PHPUnit",
-            creates => "/usr/local/bin/phpunit",
-            require => Package["php-pear"],
+            command => "sudo pear install phpunit/PHPUnit",
+            creates => "/usr/bin/phpunit",
+            require => [Package["php-pear"], Exec["symfony_channel"], Exec["phpunit_channel"]],
     }
 }
