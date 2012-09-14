@@ -1,3 +1,4 @@
+
 [submodule "Sites/bibi"]
 	path = Sites/bibi
-	url = git@github.com:Mayflower/Bibi.git
+	url = git@github.com:newLoki/Bibi.git
